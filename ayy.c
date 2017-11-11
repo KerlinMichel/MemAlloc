@@ -24,7 +24,7 @@ int main(int argc, char* argv[])
   //myalloc(1000);
 
   printf("init memory allocator...");
-  if(Mem_Init(REGION_SIZE, MEM_POLICY_FIRSTFIT) < 0) {
+  if(Mem_Init(REGION_SIZE, MEM_POLICY_WORSTFIT) < 0) {
     printf("  unable to initialize memory allocator!\n");
     return -1;
   } else printf("  success!\n");
@@ -46,16 +46,17 @@ int main(int argc, char* argv[])
   void* x4 = myalloc(64);
   void* p4 = myalloc(500);
   void* x5 = myalloc(64);
-  //printLL();
+  printLL();
   myfree(p1);
-  printf("fail\n");
+  //printf("fail\n");
   myfree(p1+10);
   myfree(p2+10);
   //printLL();
   myfree(p3);
+  printLL();
   void* p5 = myalloc(50);
-  //printLL();
-  printf("failed\n");
+  printLL();
+  //printf("failed\n");
   myfree(NULL);
   myfree(x1);
   myfree(x2);

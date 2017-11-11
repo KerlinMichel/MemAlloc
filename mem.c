@@ -13,6 +13,7 @@
 int policy;
 void* head_ptr;
 int inited = 0;
+int memSize;
 #define FREE 0
 #define ALLC 1
 
@@ -33,6 +34,7 @@ int Mem_Init(int size, int policy_)
   double page_size = getpagesize();
   double pages = ((double)size)/page_size;
   size = (ceil(pages) * page_size);
+  memSize = size;
   void *ptr = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0);
   if (ptr == MAP_FAILED) {
     perror("mmap");
@@ -95,6 +97,84 @@ void* Mem_Alloc(int size)
       slot_ptr = slot.next;
     }
     return NULL;
+  }
+  else if(policy == MEM_POLICY_BESTFIT)
+  {
+    struct Slot slot;
+    void* slot_ptr = (struct Slot*)head_ptr;
+    void *bestFitSlot = NULL;
+    int bestFit = memSize;
+    while(slot_ptr != NULL)
+    {
+      slot = *((struct Slot*)slot_ptr);
+      int fit = slot.size - size;
+      if(slot.type == FREE && fit > 0 && fit < bestFit)
+      {
+        bestFitSlot = slot_ptr;
+        bestFit = fit;
+      }
+      slot_ptr = slot.next;
+    }
+    if(bestFitSlot == NULL)
+      return NULL;
+    else {
+      slot = *((struct Slot*)bestFitSlot);
+      //split free memory
+      if(slot.size > size)
+      {
+        //printf("splitting memory\n");
+        struct Slot freeSlot;
+        freeSlot.type = FREE;
+        freeSlot.size = slot.size-size-sizeof(struct Slot);
+        freeSlot.next = slot.next;
+        void* freeSlotPtr = bestFitSlot+sizeof(struct Slot)+size;
+        *((struct Slot*)freeSlotPtr) = freeSlot;
+        slot.next = freeSlotPtr;
+      }
+      slot.size = size;
+      slot.type = ALLC;
+      *((struct Slot*)bestFitSlot) = slot;
+      return bestFitSlot+sizeof(struct Slot)+1;
+    }
+  } 
+  else if(policy == MEM_POLICY_WORSTFIT)
+  {
+    struct Slot slot;
+    void* slot_ptr = (struct Slot*)head_ptr;
+    void *worstFitSlot = NULL;
+    int worstFit = 0;
+    while(slot_ptr != NULL)
+    {
+      slot = *((struct Slot*)slot_ptr);
+      int fit = slot.size - size;
+      if(slot.type == FREE && fit > 0 && fit > worstFit)
+      {
+        worstFitSlot = slot_ptr;
+        worstFit = fit;
+      }
+      slot_ptr = slot.next;
+    }
+    if(worstFitSlot == NULL)
+      return NULL;
+    else {
+      slot = *((struct Slot*)worstFitSlot);
+      //split free memory
+      if(slot.size > size)
+      {
+        //printf("splitting memory\n");
+        struct Slot freeSlot;
+        freeSlot.type = FREE;
+        freeSlot.size = slot.size-size-sizeof(struct Slot);
+        freeSlot.next = slot.next;
+        void* freeSlotPtr = worstFitSlot+sizeof(struct Slot)+size;
+        *((struct Slot*)freeSlotPtr) = freeSlot;
+        slot.next = freeSlotPtr;
+      }
+      slot.size = size;
+      slot.type = ALLC;
+      *((struct Slot*)worstFitSlot) = slot;
+      return worstFitSlot+sizeof(struct Slot)+1;
+    }
   }
 }
 
