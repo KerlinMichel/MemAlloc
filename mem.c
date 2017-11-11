@@ -226,6 +226,22 @@ int Mem_Free(void* ptr)
   return -1;
 }
 
+int Mem_GetSize(void* ptr)
+{
+  struct Slot slot;
+  void* slot_ptr = (struct Slot*)head_ptr;
+  while(slot_ptr != NULL)
+  {
+    slot = *((struct Slot*)slot_ptr);
+    void* start = slot_ptr+sizeof(struct Slot);
+    void* end = start + slot.size;
+    if(slot.type == ALLC && between(start, end, ptr))
+      return slot.size;
+    slot_ptr = slot.next;
+  }
+  return -1;
+}
+
 int Mem_IsValid(void* ptr)
 {
   struct Slot slot;
