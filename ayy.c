@@ -7,7 +7,7 @@ void* myalloc(int size)
 {
   printf("allocate memory of size=%d bytes...", size);
   void* p = Mem_Alloc(size);
-  if(p) printf("  success (p=%p, f=%g)\n", p);//, Mem_GetFragmentation());
+  if(p) printf("  success (p=%p, f=%g)\n", p, Mem_GetFragmentation());
   else printf("  failed\n");
   return p;
 }

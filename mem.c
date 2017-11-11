@@ -59,7 +59,6 @@ void* Mem_Alloc(int size)
   {
     struct Slot slot;
     void* slot_ptr = (struct Slot*)head_ptr;
-    //slot = *((struct Slot*)head_ptr);
     while(slot_ptr != NULL)
     {
       slot = *((struct Slot*)slot_ptr);
@@ -80,20 +79,63 @@ void* Mem_Alloc(int size)
         slot.size = size;
         slot.type = ALLC;
         *((struct Slot*)slot_ptr) = slot;
-        break;//return slot_ptr+sizeof(struct Slot)+1;
+        return slot_ptr+sizeof(struct Slot)+1;
       }
       slot_ptr = slot.next;
       //slot = *((struct Slot*)slot_ptr);
       //printf("iter\n");
     }
-    slot_ptr = (struct Slot*)head_ptr;
+    /*slot_ptr = (struct Slot*)head_ptr;
     while(slot_ptr != NULL)
     {
       slot = *((struct Slot*)slot_ptr);
       printf("\ntype: %d, size: %d, next:%d\n", slot.type, slot.size, slot.next);
       slot_ptr = slot.next;
-    }
+    }*/
     return NULL;
-    //printf("\nsize: %d\n", slot.size);
   }
+}
+
+int between(int start, int end, int val)
+{
+  return val >= start && val <= end;
+}
+
+int Mem_IsValid(void* ptr)
+{
+  struct Slot slot;
+  void* slot_ptr = (struct Slot*)head_ptr;
+  while(slot_ptr != NULL)
+  {
+    slot = *((struct Slot*)slot_ptr);
+    void* start = slot_ptr+sizeof(struct Slot);
+    void* end = start + slot.size;
+    if(between(start, end, ptr))
+      return 1;
+    slot_ptr = slot.next;
+  }
+  return 0;
+}
+
+float Mem_GetFragmentation()
+{
+  struct Slot slot;
+  void* slot_ptr = (struct Slot*)head_ptr;
+  float largest_slot = 0;
+  float total_free = 0;
+  while(slot_ptr != NULL)
+  {
+    slot = *((struct Slot*)slot_ptr);
+    if(slot.type == FREE)
+    {
+      if(slot.size > largest_slot)
+        largest_slot = slot.size;
+      total_free += slot.size;
+    }
+    slot_ptr = slot.next;
+  }
+  if(largest_slot > 0 && total_free > 0)
+    return largest_slot/total_free;
+  else
+    return 0;
 }
