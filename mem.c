@@ -52,7 +52,18 @@ int Mem_Init(int size, int policy_)
   inited = 1;
   return 0;
 }
-
+void printLL()
+{
+  printf("\n");
+  struct Slot slot;
+  void* slot_ptr = (struct Slot*)head_ptr;
+  while(slot_ptr != NULL)
+  {
+    slot = *((struct Slot*)slot_ptr);
+    printf("type: %d, size: %d, next:%d\n", slot.type, slot.size, slot.next);
+    slot_ptr = slot.next;
+  }
+}
 void* Mem_Alloc(int size)
 {
   if(policy == MEM_POLICY_FIRSTFIT)
@@ -82,16 +93,7 @@ void* Mem_Alloc(int size)
         return slot_ptr+sizeof(struct Slot)+1;
       }
       slot_ptr = slot.next;
-      //slot = *((struct Slot*)slot_ptr);
-      //printf("iter\n");
     }
-    /*slot_ptr = (struct Slot*)head_ptr;
-    while(slot_ptr != NULL)
-    {
-      slot = *((struct Slot*)slot_ptr);
-      printf("\ntype: %d, size: %d, next:%d\n", slot.type, slot.size, slot.next);
-      slot_ptr = slot.next;
-    }*/
     return NULL;
   }
 }
@@ -99,6 +101,49 @@ void* Mem_Alloc(int size)
 int between(int start, int end, int val)
 {
   return val >= start && val <= end;
+}
+
+int Mem_Free(void* ptr)
+{
+  if(ptr == NULL)
+    return -1;
+  struct Slot slot;
+  void* prev_slot_ptr = NULL;
+  void* slot_ptr = (struct Slot*)head_ptr;
+  while(slot_ptr != NULL)
+  {
+    slot = *((struct Slot*)slot_ptr);
+    void* start = slot_ptr+sizeof(struct Slot);
+    void* end = start + slot.size;
+    if(slot.type == ALLC && between(start, end, ptr))
+    {
+      int size = 0;
+      struct Slot afterSlot;
+      void* afterSlotPtr = slot.next;
+      if(afterSlotPtr != NULL && ((struct Slot*)afterSlotPtr)->type == FREE)
+      {
+        afterSlot = *((struct Slot*)afterSlotPtr);
+        size += sizeof(struct Slot) + ((struct Slot*)slot.next)->size;
+        afterSlotPtr = afterSlot.next;
+        //*((struct Slot*)afterSlot.next) = NULL;
+      }
+      if(prev_slot_ptr != NULL && ((struct Slot*)prev_slot_ptr)->type == FREE)
+      {
+        ((struct Slot*)prev_slot_ptr)->size += size + sizeof(struct Slot) + ((struct Slot*)slot_ptr)->size;
+        ((struct Slot*)prev_slot_ptr)->next = afterSlotPtr;
+        return 0;
+      } else {
+        ((struct Slot*)slot_ptr)->size += size;
+        ((struct Slot*)slot_ptr)->type = FREE;
+        ((struct Slot*)slot_ptr)->next = afterSlotPtr;
+        return 0;
+      }
+      break;
+    }
+    prev_slot_ptr = slot_ptr;
+    slot_ptr = slot.next;
+  }
+  return -1;
 }
 
 int Mem_IsValid(void* ptr)
@@ -110,7 +155,7 @@ int Mem_IsValid(void* ptr)
     slot = *((struct Slot*)slot_ptr);
     void* start = slot_ptr+sizeof(struct Slot);
     void* end = start + slot.size;
-    if(between(start, end, ptr))
+    if(slot.type == ALLC && between(start, end, ptr))
       return 1;
     slot_ptr = slot.next;
   }

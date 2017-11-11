@@ -12,6 +12,13 @@ void* myalloc(int size)
   return p;
 }
 
+void myfree(void* p)
+{
+  printf("free memory at p=%p...", p);
+  if(!Mem_Free(p)) printf("  success (f=%g)\n", Mem_GetFragmentation());
+  else printf("  failed\n");
+}
+
 int main(int argc, char* argv[])
 {
   //myalloc(1000);
@@ -29,7 +36,7 @@ int main(int argc, char* argv[])
     printf("  success, which means the program incorrectly handles duplicate init...\n");
     return -1;
   }
-  
+  //printLL();
   void* x1 = myalloc(64);
   void* p1 = myalloc(200);
   void* x2 = myalloc(64);
@@ -39,5 +46,24 @@ int main(int argc, char* argv[])
   void* x4 = myalloc(64);
   void* p4 = myalloc(500);
   void* x5 = myalloc(64);
+  //printLL();
+  myfree(p1);
+  printf("fail\n");
+  myfree(p1+10);
+  myfree(p2+10);
+  //printLL();
+  myfree(p3);
+  void* p5 = myalloc(50);
+  //printLL();
+  printf("failed\n");
+  myfree(NULL);
+  myfree(x1);
+  myfree(x2);
+  myfree(x3+10);
+  myfree(x4);
+  myfree(x5+10);
+  myfree(p4);
+  myfree(p5);
 
+  return 0;
 }
